@@ -2,8 +2,6 @@ package com.example.cadencetracker.presentation
 
 import android.content.Context
 import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,11 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -31,7 +25,7 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var sensorManager: SensorManager
     private var accelerometer: Sensor? = null
-    private lateinit var cadenceTracker: CadenceTracker
+    lateinit var cadenceTracker: CadenceTracker
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,7 +39,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             var cadence by remember { mutableIntStateOf(0) }
 
-            androidx.compose.runtime.LaunchedEffect(Unit) {
+            LaunchedEffect(Unit) {
                 while (true) {
                     delay(1000) // Update cadence every second
                     cadence = cadenceTracker.calculateCadence()
@@ -69,36 +63,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-class CadenceTracker : SensorEventListener {
-    private val threshold = 10.0 // Sensitivity for step detection
-    private val minStepInterval = 300 // Minimum interval between steps in ms
-    private var lastTimestamp: Long = 0
-    private var steps = 0
-    private var startTime = System.currentTimeMillis()
-
-    override fun onSensorChanged(event: SensorEvent?) {
-        event?.let {
-            if (it.values.size > 2) {
-                val acceleration = it.values[2] // Z-axis acceleration
-                if (acceleration > threshold) {
-                    val currentTime = System.currentTimeMillis()
-                    if (currentTime - lastTimestamp > minStepInterval) {
-                        steps++
-                        lastTimestamp = currentTime
-                    }
-                }
-            }
-        }
-    }
-
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
-
-    fun calculateCadence(): Int {
-        val elapsedTimeInSeconds = (System.currentTimeMillis() - startTime) / 1000
-        return if (elapsedTimeInSeconds > 0) (steps / elapsedTimeInSeconds * 60).toInt() else 0
-    }
-}
-
 @Composable
 fun WearApp(cadence: Int) {
     CadenceTrackerTheme {
@@ -108,7 +72,7 @@ fun WearApp(cadence: Int) {
                 .background(MaterialTheme.colors.background),
             contentAlignment = Alignment.Center
         ) {
-            TimeText()
+            TimeText() // Adds a small clock at the top
             CadenceDisplay(cadence)
         }
     }
@@ -118,7 +82,7 @@ fun WearApp(cadence: Int) {
 fun CadenceDisplay(cadence: Int) {
     Box(
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center // Center the text within the box
+        contentAlignment = Alignment.Center // Centers the text within the box
     ) {
         Text(
             text = "$cadence steps/min",
@@ -130,6 +94,6 @@ fun CadenceDisplay(cadence: Int) {
 
 @Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
 @Composable
-fun DefaultPreview() {
-    WearApp(120) // Sample cadence value for preview
+fun PreviewWearApp() {
+    WearApp(cadence = 120) // Sample cadence value for preview
 }
